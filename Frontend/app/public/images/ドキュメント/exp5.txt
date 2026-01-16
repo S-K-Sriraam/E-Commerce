@@ -1,0 +1,194 @@
+#include <LPC213x.h>
+#include <stdio.h>
+#include <ctype.h>
+
+#define BUZZ_PIN 7
+#define BAUD 9600
+
+/* --- Prototypes --- */
+void system_init(void);
+void uart0_init(void);
+int  uart0_putc(int ch);
+void uart0_puts(const char *s);
+int  uart0_getchar_poll(void);
+void delay_ms(unsigned long ms);
+void rtc_init(void);
+void buz_on(void);
+void buz_off(void);
+void RTC_IRQHandler(void) __irq;
+
+/* Global flag set by RTC interrupt */
+volatile unsigned char alarmFlag = 0;
+
+/* ---- System init (PLL, MAM, VPB) ---- */
+void system_init(void) {
+    PLLCFG = 0x24;                 /* M=5, P=2 (for 12 MHz crystal ? 60 MHz CCLK) */
+    PLLFEED = 0xAA; PLLFEED = 0x55;
+    PLLCON = 0x01;                 /* Enable PLL */
+    PLLFEED = 0xAA; PLLFEED = 0x55;
+
+    while (!(PLLSTAT & (1 << 10))); /* Wait for PLOCK */
+
+    PLLCON = 0x03;                 /* Connect PLL */
+    PLLFEED = 0xAA; PLLFEED = 0x55;
+
+    MAMCR = 0x02;                  /* Enable MAM */
+    MAMTIM = 0x04;
+    VPBDIV = 0x02;                 /* PCLK = 30 MHz */
+}
+
+/* ---- UART0 (polling) ---- */
+void uart0_init(void) {
+    unsigned long pclk = 30000000UL;
+    unsigned long dl = (pclk / 16) / BAUD;
+    PINSEL0 |= 0x05;               /* P0.0 = RxD0, P0.1 = TxD0 */
+    U0LCR = 0x83;                  /* 8N1, DLAB=1 */
+    U0DLL = (dl & 0xFF);
+    U0DLM = (dl >> 8) & 0xFF;
+    U0LCR = 0x03;                  /* DLAB=0 */
+}
+
+int uart0_putc(int ch) {
+    if (ch == '\n') {
+        while (!(U0LSR & 0x20));
+        U0THR = '\r';
+    }
+    while (!(U0LSR & 0x20));
+    U0THR = ch;
+    return ch;
+}
+
+void uart0_puts(const char *s) {
+    while (*s) uart0_putc(*s++);
+}
+
+int uart0_getchar_poll(void) {
+    return (U0LSR & 0x01) ? U0RBR : -1;
+}
+
+/* ---- Blocking delay ---- */
+void delay_ms(unsigned long ms) {
+    unsigned long i, j;
+    for (i = 0; i < ms; i++) {
+        for (j = 0; j < 6659; j++);
+    }
+}
+
+/* ---- RTC init ----
+   PREINT = 915 (0x393), PREFRAC = 33408 (0x8320) for 30 MHz PCLK
+*/
+void rtc_init(void) {
+    PREINT  = 0x00000393;
+    PREFRAC = 0x00008320;
+    ILR = 0x03;        /* Clear pending interrupts */
+    CCR = 0x01;        /* Enable RTC */
+    AMR = 0xFF;        /* Mask all compare fields initially */
+}
+
+/* ---- Buzzer ---- */
+void buz_on(void)  { IOSET0 = (1 << BUZZ_PIN); }
+void buz_off(void) { IOCLR0 = (1 << BUZZ_PIN); }
+
+/* ---- RTC Interrupt Handler ---- */
+void RTC_IRQHandler(void) __irq {
+    if (ILR & (1 << 1)) {          /* Alarm interrupt */
+        alarmFlag = 1;
+        uart0_puts("\n*** ALARM ***\n");
+        ILR = (1 << 1);            /* Clear alarm interrupt */
+    }
+    VICVectAddr = 0;               /* Acknowledge VIC */
+}
+
+/* ---- MAIN ---- */
+int main(void) {
+    char buf[64];
+    int c;
+    int loops;                     /* declare outside loops (C90 standard) */
+    int d1,d2,d3,d4,d5,d6;
+    int hh, mm, ss;
+    unsigned int newmin, newhour;
+
+    system_init();
+    uart0_init();
+
+    IO0DIR |= (1 << BUZZ_PIN);     /* Buzzer output */
+    buz_off();
+
+    rtc_init();
+
+    /* Setup VIC for RTC interrupt */
+    VICVectAddr2 = (unsigned long)RTC_IRQHandler;
+    VICVectCntl2 = 0x20 | 13;      /* Enable slot, source=13 (RTC) */
+    VICIntEnable |= (1 << 13);
+
+    uart0_puts("Mini RTC-UART Demo\n");
+    uart0_puts("Commands: '*' set time, '!' set alarm, '$' snooze, '.' stop\n");
+
+    while (1) {
+        /* Print current time */
+        sprintf(buf, "TIME: %02d:%02d:%02d\r", HOUR, MIN, SEC);
+        uart0_puts(buf);
+
+        /* Poll input for ~1 second */
+        for (loops = 0; loops < 100; loops++) {
+            c = uart0_getchar_poll();
+            if (c >= 0) {
+                if (c == '*') {
+                    uart0_puts("\nSet Time (HHMMSS): ");
+                    while ((d1 = uart0_getchar_poll()) < 0); uart0_putc(d1);
+                    while ((d2 = uart0_getchar_poll()) < 0); uart0_putc(d2);
+                    while ((d3 = uart0_getchar_poll()) < 0); uart0_putc(d3);
+                    while ((d4 = uart0_getchar_poll()) < 0); uart0_putc(d4);
+                    while ((d5 = uart0_getchar_poll()) < 0); uart0_putc(d5);
+                    while ((d6 = uart0_getchar_poll()) < 0); uart0_putc(d6);
+                    uart0_puts("\n");
+                    hh = ((d1-'0')*10 + (d2-'0'));
+                    mm = ((d3-'0')*10 + (d4-'0'));
+                    ss = ((d5-'0')*10 + (d6-'0'));
+                    if (hh>=0 && hh<24 && mm>=0 && mm<60 && ss>=0 && ss<60) {
+                        HOUR = hh; MIN = mm; SEC = ss;
+                        uart0_puts("Time set\n");
+                    } else uart0_puts("Bad format\n");
+                }
+                else if (c == '!') {
+                    uart0_puts("\nSet Alarm (HHMMSS): ");
+                    while ((d1 = uart0_getchar_poll()) < 0); uart0_putc(d1);
+                    while ((d2 = uart0_getchar_poll()) < 0); uart0_putc(d2);
+                    while ((d3 = uart0_getchar_poll()) < 0); uart0_putc(d3);
+                    while ((d4 = uart0_getchar_poll()) < 0); uart0_putc(d4);
+                    while ((d5 = uart0_getchar_poll()) < 0); uart0_putc(d5);
+                    while ((d6 = uart0_getchar_poll()) < 0); uart0_putc(d6);
+                    uart0_puts("\n");
+                    hh = ((d1-'0')*10 + (d2-'0'));
+                    mm = ((d3-'0')*10 + (d4-'0'));
+                    ss = ((d5-'0')*10 + (d6-'0'));
+                    if (hh>=0 && hh<24 && mm>=0 && mm<60 && ss>=0 && ss<60) {
+                        ALHOUR = hh; ALMIN = mm; ALSEC = ss;
+                        AMR = 0xF8; /* Compare HOUR/MIN/SEC */
+                        uart0_puts("Alarm set\n");
+                    } else uart0_puts("Bad format\n");
+                }
+                else if (c == '$') {
+                    if (alarmFlag) {
+                        newmin = MIN + 5; newhour = HOUR;
+                        if (newmin >= 60) { newmin -= 60; newhour = (HOUR+1)%24; }
+                        ALHOUR = newhour; ALMIN = newmin; ALSEC = SEC;
+                        alarmFlag = 0; buz_off();
+                        uart0_puts("Snoozed 5 min\n");
+                    } else uart0_puts("No active alarm\n");
+                }
+                else if (c == '.') {
+                    alarmFlag = 0; buz_off(); uart0_puts("Alarm stopped\n");
+                } else {
+                    uart0_putc((char)c);
+                }
+            }
+            delay_ms(10);
+        }
+
+        /* Alarm beeps */
+        if (alarmFlag) {
+            buz_on(); delay_ms(200); buz_off(); delay_ms(200);
+        }
+    }
+}
