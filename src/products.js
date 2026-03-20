@@ -1,4 +1,7 @@
-const baseImagePath = `${process.env.PUBLIC_URL}/images`;
+const baseImagePath =
+  process.env.NODE_ENV === "production"
+    ? "https://s-k-sriraam.github.io/E-Commerce/images"
+    : "/images";
 
 const products= [
     {
