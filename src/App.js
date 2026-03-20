@@ -10,27 +10,19 @@ import ProductDetails from "./components/screens/ProductDetails";
 
 export default function App() {
   return (
-    <>
-      <BrowserRouter>
-        <Header />
-        <main>
-          <Container>
-            <Routes>
-              <Route path="/" element={<Home />} />
-            </Routes>
-            <Routes>
-              <Route path="/product/:id" element={<ProductDetails />} />
-            </Routes>
-            <Routes>
-              <Route path="/signup" element={<SignupScreen />} />
-            </Routes>
-            <Routes>
-              <Route pate="/login" element={<LoginScreen />} />
-            </Routes>
-          </Container>
-        </main>
-        <Footer />
-      </BrowserRouter>
-    </>
+    <BrowserRouter basename="/E-Commerce">
+      <Header />
+      <main>
+        <Container>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/signup" element={<SignupScreen />} />
+            <Route path="/login" element={<LoginScreen />} />
+          </Routes>
+        </Container>
+      </main>
+      <Footer />
+    </BrowserRouter>
   );
 }
