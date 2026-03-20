@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Form, Button, Col } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import CheckoutSteps from "../CheckoutSteps";
 import FormContainer from "../FormContainer";
-import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { savePaymentMethod } from "../../actions/cartActions";
 
 function PaymentScreen() {
+  const dispatch = useDispatch();
   const cart = useSelector((state) => state.cart);
   const { shippingAddress } = cart;
+  const [paymentMethod, setPaymentMethod] = useState(
+    cart.paymentMethod || "Cash on Delivery"
+  );
 
   const navigate = useNavigate();
 
@@ -17,6 +22,7 @@ function PaymentScreen() {
 
   const submitHandler = (e) => {
     e.preventDefault();
+    dispatch(savePaymentMethod(paymentMethod));
     navigate('/placeorder');
   };
 
@@ -31,7 +37,11 @@ function PaymentScreen() {
               <Form.Check
                 type="radio"
                 label="Cash on Delivery"
-                checked
+                id="cashOnDelivery"
+                name="paymentMethod"
+                value="Cash on Delivery"
+                checked={paymentMethod === "Cash on Delivery"}
+                onChange={(e) => setPaymentMethod(e.target.value)}
               ></Form.Check>
             </Col>
           </Form.Group>

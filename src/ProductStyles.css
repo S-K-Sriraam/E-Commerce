@@ -1,0 +1,11 @@
+.product-card {
+  margin: 15px;
+  max-width: 300px;
+  text-align: center;
+}
+
+.product-image {
+  height: 250px;
+  object-fit: cover;
+  border-radius: 8px;
+}

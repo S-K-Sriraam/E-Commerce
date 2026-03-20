@@ -1,12 +1,10 @@
 import React from "react";
-import { Navbar, Container, Nav, NavDropdown } from "react-bootstrap";
+import { Navbar, Container, Nav, NavDropdown, Button } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import Loader from "./Loader";
-import Message from "./Message";
 import { logout } from "../actions/userActions";
 
-function Header() {
+function Header({ theme, onToggleTheme }) {
   const dispatch = useDispatch();
 
   const userLogin = useSelector((state) => state.userLogin);
@@ -60,9 +58,9 @@ function Header() {
               </>
             )}
 
-            { userInfo && userInfo.isAdmin && (
+            {userInfo && userInfo.isAdmin && (
               <NavDropdown title='Admin' id='adminmenu'>
-                <LinkContainer to='/admin/userList'>
+                <LinkContainer to='/admin/userlist'>
                   <NavDropdown.Item>Users</NavDropdown.Item>
                 </LinkContainer>
 
@@ -75,6 +73,15 @@ function Header() {
                 </LinkContainer>
               </NavDropdown>
             )}
+
+            <Button
+              variant="outline-light"
+              size="sm"
+              className="ms-lg-3 mt-2 mt-lg-0 theme-toggle-btn"
+              onClick={onToggleTheme}
+            >
+              {theme === "light" ? "Dark Mode" : "Light Mode"}
+            </Button>
           </Nav>
         </Navbar.Collapse>
       </Container>

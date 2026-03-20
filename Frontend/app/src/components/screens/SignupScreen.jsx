@@ -4,20 +4,17 @@ import { signup } from "../../actions/userActions";
 import { useDispatch, useSelector } from "react-redux";
 import Loader from "../Loader";
 import Message from "../Message";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function SignupScreen() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const location = useLocation();
-  const redirect = location.search ? location.search.split("=")[1] : "/";
   const [message, setMessage] = useState("");
   const [show, setShow] = useState("fa fa-eye-slash");
 
   const userSignup = useSelector((state) => state.userSignup);
   const { error, loading, userInfo } = userSignup;
-  const [showMessage, setShowMessage] = useState(false);
-  const handleClose = () => setMessage(false);
+  const handleClose = () => setMessage("");
   const [formValues, setFromValues] = useState({
     firstname: "",
     lastname: "",
@@ -61,17 +58,6 @@ function SignupScreen() {
     );
   };
 
-  const clearForm = () => {
-    setFromValues({
-      firstname: "",
-      lastname: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      termsAccepted: false,
-    });
-  };
-
   const validateField = (name, value) => {
     let errorMessage = null;
     switch (name) {
@@ -97,7 +83,7 @@ function SignupScreen() {
         }
         break;
 
-      case "confirmpassword":
+      case "confirmPassword":
         if (value !== formValues.password) {
           errorMessage = "Password do not match...";
         }
@@ -143,17 +129,23 @@ function SignupScreen() {
         formValues.password
       )
     );
-    clearForm();
-    setMessage("Signup is success");
-    navigate("/login");
   };
 
   useEffect(() => {
     if(userInfo) {
-      setMessage(userInfo["details"])
+      setFromValues({
+        firstname: "",
+        lastname: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        termsAccepted: false,
+      });
+      setMessage(userInfo?.details || "Signup successful");
+      navigate("/login");
     }
     localStorage.removeItem('userInfo')
-  }, [userInfo])
+  }, [navigate, userInfo])
 
   return (
     <>

@@ -7,7 +7,7 @@ function Footer() {
       <Container>
         <Row>
           <Col className="text-center p-2">
-            Copyright &copy; 2026 All rights reserved
+            Copyright @copy; guvi.in
           </Col>
         </Row>
       </Container>

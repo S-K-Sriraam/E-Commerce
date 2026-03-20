@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Button, Row, Col, ListGroup, Image, Card } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import CheckoutSteps from "../CheckoutSteps";
-import Loader from "../Loader";
 import Message from "../Message";
 import { createOrder } from "../../actions/orderActions";
 import { ORDER_CREATE_RESET } from "../../constants/orderConstants";
@@ -11,6 +10,7 @@ import { ORDER_CREATE_RESET } from "../../constants/orderConstants";
 function PlaceOrderScreen() {
   const orderCreate = useSelector((state) => state.orderCreate);
   const { order, error, success } = orderCreate;
+  const orderId = order?._id;
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -35,10 +35,10 @@ function PlaceOrderScreen() {
 
   useEffect(() => {
     if (success) {
-      navigate(`/order/${order._id}`)
+      navigate(`/order/${orderId}`)
       dispatch({type: ORDER_CREATE_RESET})
     }
-  }, [success])
+  }, [dispatch, navigate, orderId, success])
 
   const placeOrder = () => {
     dispatch(createOrder ({
@@ -65,7 +65,7 @@ function PlaceOrderScreen() {
 
                 <p>
                   <strong>Shipping: </strong>
-                  {cart.shippingAddress.addres}, {cart.shippingAddress.city}
+                  {cart.shippingAddress.address}, {cart.shippingAddress.city}
                   {' '}
                   {cart.shippingAddress.postalCode}
                   {' '}
@@ -162,7 +162,7 @@ function PlaceOrderScreen() {
                   <Button
                     type='button'
                     className='btn-block'
-                    disabled={cart.cartItems === 0}
+                    disabled={cart.cartItems.length === 0}
                     onClick = {placeOrder}
                   >
                     Place Order

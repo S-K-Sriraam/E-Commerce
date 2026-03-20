@@ -14,8 +14,7 @@ import {
   ORDER_LIST_FAIL,
   ORDER_LIST_MY_REQUEST,
   ORDER_LIST_MY_SUCCESS,
-  ORDER_LIST_MY_FAIL,
-  ORDER_LIST_MY_RESET
+  ORDER_LIST_MY_FAIL
 } from '../constants/orderConstants'
 import { CART_CLEAR_ITEMS } from '../constants/cartConstants'
 

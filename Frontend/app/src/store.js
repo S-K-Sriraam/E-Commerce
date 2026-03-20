@@ -32,6 +32,9 @@ import {
 const reducer = combineReducers({
   productList: productListReducer,
   productDetails: productDetailsReducer,
+  productCreate: productCreateReducers,
+  productUpdate: productUpdateReducers,
+  productDelete: productDeleteReducers,
 
   userSignup: userSignupReducer,
   userLogin: userLoginReducer,

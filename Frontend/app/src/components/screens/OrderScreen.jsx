@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Button, Row, Col, ListGroup, Image, Card } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -54,7 +54,7 @@ function OrderScreen() {
               <h2>Shipping</h2>
               <p>
                 <strong>Name:</strong>{" "}
-                {order?.user?.first_name || "N/A"}
+                {order?.user?.name || "N/A"}
               </p>
               <p>
                 <strong>Email:</strong>{" "}

@@ -13,11 +13,9 @@ import {
   PRODUCT_CREATE_REQUEST,
   PRODUCT_CREATE_SUCCESS,
   PRODUCT_CREATE_FAIL,
-  PRODUCT_CREATE_RESET,
   PRODUCT_UPDATE_REQUEST,
   PRODUCT_UPDATE_SUCCESS,
   PRODUCT_UPDATE_FAIL,
-  PRODUCT_UPDATE_RESET,
 } from "../constants/productConstants"; // ensure this file exists at src/constants/productConstants.js
 
 import localProducts from "../products"; // optional fallback; your products.js currently is empty — add sample items if you want fallback.
@@ -138,7 +136,7 @@ export const updateProduct = (product) => async (dispatch, getState) => {
     const { data } = await axios.put(`/api/products/update/${product._id}`, product, config);
     dispatch ({
       type: PRODUCT_UPDATE_SUCCESS,
-      payloda: data,
+      payload: data,
     });
   }
 

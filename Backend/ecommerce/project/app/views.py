@@ -14,6 +14,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.core.mail import EmailMessage
+from django.utils import timezone
 
 from .models import Product, Order, OrderItem, ShippingAddress
 from .serializer import (
@@ -121,10 +122,11 @@ def addOrderItems(request):
 
     order = Order.objects.create(
         user=user,
-        paymentMethod='Cash on Delivery',
+        paymentMethod=data.get('paymentMethod', 'Cash on Delivery'),
         taxPrice=data['taxPrice'],
         shippingPrice=data['shippingPrice'],
-        totalPrice=data['totalPrice']
+        totalPrice=data['totalPrice'],
+        createdAt=timezone.now()
     )
 
     ShippingAddress.objects.create(
@@ -157,6 +159,10 @@ def addOrderItems(request):
 @permission_classes([IsAuthenticated])
 def getMyOrders(request):
     orders = request.user.order_set.all()
+    for order in orders:
+        if not order.createdAt:
+            order.createdAt = timezone.now()
+            order.save(update_fields=['createdAt'])
     serializer = OrderSerializer(orders, many=True)
     return Response(serializer.data)
 
@@ -176,6 +182,9 @@ def getOrderById(request, pk):
     user = request.user
 
     if user.is_staff or order.user == user:
+        if not order.createdAt:
+            order.createdAt = timezone.now()
+            order.save(update_fields=['createdAt'])
         serializer = OrderSerializer(order, many=False)
         return Response(serializer.data)
 

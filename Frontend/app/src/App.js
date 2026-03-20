@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import { Container } from "react-bootstrap";
@@ -20,9 +20,22 @@ import UserEditScreen from "./components/screens/UserEditScreen";
 import ProfileScreen from "./components/screens/ProfileScreen";
 
 export default function App() {
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("theme") || "light"
+  );
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-bs-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
   return (
     <BrowserRouter>
-      <Header />
+      <Header theme={theme} onToggleTheme={toggleTheme} />
       <main>
         <Container>
           <Routes>
@@ -36,7 +49,7 @@ export default function App() {
             <Route path="/placeorder" element={<PlaceOrderScreen />} />
             <Route path="/payment" element={<PaymentScreen />} />
             <Route path="/order/:id" element={<OrderScreen />} />
-            <Route path="/admin/productList" element={<ProductListScreen />} />
+            <Route path="/admin/productlist" element={<ProductListScreen />} />
             <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />
             <Route path="/admin/orderlist" element={<OrderListScreen />} />
             <Route path="/admin/userlist" element={<UserListScreen />} />

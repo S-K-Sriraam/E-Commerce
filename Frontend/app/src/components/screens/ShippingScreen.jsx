@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Form, Button } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from "react-router-dom";
@@ -9,8 +9,7 @@ import CheckoutSteps from '../CheckoutSteps';
 function ShippingScreen() {
   const navigate = useNavigate();
   const cart = useSelector(state => state.cart)
-  const {shippingAddress} = cart
-  console.log(shippingAddress)
+  const shippingAddress = cart.shippingAddress || {}
 
   const dispatch = useDispatch();
 
